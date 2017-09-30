@@ -40,6 +40,7 @@ class LavidDu:
                 channel=channel,
                 count=1000)
 
+        pp.pprint(response)
         user_models = {}
 
         for message in response['messages']:
