@@ -3,13 +3,10 @@
 import argparse
 import json
 import markovify
-import pprint
 import re
 import signal
 import slackclient
 import time
-
-pp = pprint.PrettyPrinter()
 
 class LavidDu:
     def __init__(self, api_token, bot_api_token, data_file):
@@ -44,7 +41,7 @@ class LavidDu:
                 channel=channel,
                 count=1000)
 
-        pp.pprint(response)
+        print(response)
         user_models = {}
 
         for message in response['messages']:
@@ -96,14 +93,14 @@ class LavidDu:
             while self.running:
                 events = self.bot_slack_client.rtm_read()
                 for event in events:
-                    pp.pprint(event)
+                    print(event)
 
                     if event['type'] == 'message' and 'subtype' not in event:
                         text = event['text']
 
                         match = re.match(response_regex, text)
                         if match:
-                            pp.pprint(self.send_message(event['channel'], match.group(1)))
+                            self.send_message(event['channel'], match.group(1))
                         else:
                             try:
                                 self.append_chain(event['user'], text)
