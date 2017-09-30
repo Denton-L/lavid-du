@@ -3,10 +3,11 @@
 import argparse
 import json
 import markovify
-import slackclient
-import time
 import pprint
 import re
+import signal
+import slackclient
+import time
 
 pp = pprint.PrettyPrinter()
 
@@ -27,6 +28,9 @@ class LavidDu:
 
         self.user_id = self.get_user_id()
         self.running = False
+
+        signal.signal(signal.SIGINT, self.handle_signal)
+        signal.signal(signal.SIGTERM, self.handle_signal)
 
     def combine_models(self, user_id, user_model):
         self.user_models[user_id] = (
@@ -119,6 +123,9 @@ class LavidDu:
 
     def stop(self):
         self.running = False
+
+    def handle_signal(self, signal, frame):
+        self.stop()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
