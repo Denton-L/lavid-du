@@ -79,7 +79,7 @@ class LavidDu:
             self.combine_models(user, markovify.NewlineText.from_dict(model))
 
     def start(self):
-        response_regex = re.compile('<@%s>[ ]?imitate[ ]?<@([A-Z0-9]+)>' % self.user_id)
+        response_regex = re.compile('<@%s> *imitate *<@([A-Z0-9]+)>' % self.user_id)
 
         started = self.bot_slack_client.rtm_connect()
         if started:
