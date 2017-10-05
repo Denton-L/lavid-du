@@ -9,6 +9,8 @@ import slackclient
 import time
 
 class LavidDu:
+    SENTENCE_ATTEMPTS=1000
+
     def __init__(self, api_token, bot_api_token, data_file):
         self.slack_client = slackclient.SlackClient(api_token)
         self.bot_slack_client = slackclient.SlackClient(bot_api_token)
@@ -56,15 +58,19 @@ class LavidDu:
 
     def send_message(self, channel, user_id):
         if user_id == self.user_id:
-            text = 'Go fuck yourself.'
+            everything_model = markovify.combine(
+                    [self.user_models[user] for user in self.user_models])
+            text = everything_model.make_sentence(tries=LavidDu.SENTENCE_ATTEMPTS)
+            if not text:
+                print('Unable to create unique sentence for everyone.')
+                text = self.user_models[user_id].make_sentence(test_output=False)
         elif user_id in self.user_models:
-            text = self.user_models[user_id].make_sentence(tries=1000)
+            text = self.user_models[user_id].make_sentence(tries=LavidDu.SENTENCE_ATTEMPTS)
+            if not text:
+                print('Unable to create unique sentence for user.')
+                text = self.user_models[user_id].make_sentence(test_output=False)
         else:
             text = 'I do not have data on <@%s>.' % user_id
-
-        if not text:
-            print('Unable to create unique sentence.')
-            text = self.user_models[user_id].make_sentence(test_output=False)
 
         return self.slack_client.api_call(
                 'chat.postMessage',
