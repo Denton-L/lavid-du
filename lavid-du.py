@@ -58,9 +58,13 @@ class LavidDu:
         if user_id == self.user_id:
             text = 'Go fuck yourself.'
         elif user_id in self.user_models:
-            text = self.user_models[user_id].make_sentence(test_output=False)
+            text = self.user_models[user_id].make_sentence(tries=1000)
         else:
             text = 'I do not have data on <@%s>.' % user_id
+
+        if not text:
+            print('Unable to create unique sentence.')
+            text = self.user_models[user_id].make_sentence(test_output=False)
 
         return self.slack_client.api_call(
                 'chat.postMessage',
