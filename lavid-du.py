@@ -56,21 +56,21 @@ class LavidDu:
     def get_user_id(self):
         return self.bot_slack_client.api_call('auth.test')['user_id']
 
-    def send_message(self, channel, user_id):
-        if user_id == self.user_id:
-            everything_model = markovify.combine(
-                    [self.user_models[user] for user in self.user_models])
-            text = everything_model.make_sentence(tries=LavidDu.SENTENCE_ATTEMPTS)
-            if not text:
-                print('Unable to create unique sentence for everyone.')
-                text = self.user_models[user_id].make_sentence(test_output=False)
-        elif user_id in self.user_models:
-            text = self.user_models[user_id].make_sentence(tries=LavidDu.SENTENCE_ATTEMPTS)
-            if not text:
-                print('Unable to create unique sentence for user.')
-                text = self.user_models[user_id].make_sentence(test_output=False)
+    def send_message(self, channel, user_ids):
+        if self.user_id in user_ids:
+            collected_models = [self.user_models[user_id] for user_id in self.user_models]
         else:
-            text = 'I do not have data on <@%s>.' % user_id
+            collected_models = [self.user_models[user_id]
+                    for user_id in user_ids if user_id in self.user_models]
+
+        if collected_models:
+            final_model = markovify.combine(collected_models)
+            text = final_model.make_sentence(tries=LavidDu.SENTENCE_ATTEMPTS)
+            if not text:
+                print('Unable to create unique sentence.')
+                text = final_model.make_sentence(test_output=False)
+        else:
+            text = 'I do not have data for anyone listed.'
 
         return self.slack_client.api_call(
                 'chat.postMessage',
@@ -89,7 +89,7 @@ class LavidDu:
             self.combine_models(user, markovify.NewlineText.from_dict(model))
 
     def start(self):
-        response_regex = re.compile('<@%s> *imitate *<@([A-Z0-9]+)>' % self.user_id)
+        response_regex = re.compile('<@%s> *imitate(?: *<@([A-Z0-9]+)>)+' % self.user_id)
 
         started = self.bot_slack_client.rtm_connect()
         if started:
@@ -106,7 +106,7 @@ class LavidDu:
 
                         match = re.match(response_regex, text)
                         if match:
-                            self.send_message(event['channel'], match.group(1))
+                            self.send_message(event['channel'], list(match.groups()))
                         else:
                             try:
                                 self.append_chain(event['user'], text)
