@@ -64,7 +64,9 @@ class LavidDu:
                     for user_id in user_ids if user_id in self.user_models]
 
         if collected_models:
-            final_model = markovify.combine(collected_models)
+            final_model = (markovify.combine(collected_models)
+                    if len(collected_models) > 1
+                    else collected_models[0])
             text = final_model.make_sentence(tries=LavidDu.SENTENCE_ATTEMPTS)
             if not text:
                 print('Unable to create unique sentence.')
