@@ -7,6 +7,7 @@ import re
 import signal
 import slackclient
 import time
+import traceback
 
 class LavidDu:
     SENTENCE_ATTEMPTS=1000
@@ -99,30 +100,33 @@ class LavidDu:
             old_data = None
 
             while self.running:
-                events = self.bot_slack_client.rtm_read()
-                for event in events:
-                    print(event)
+                try:
+                    events = self.bot_slack_client.rtm_read()
+                    for event in events:
+                        print(event)
 
-                    if event['type'] == 'message' and 'subtype' not in event:
-                        text = event['text']
+                        if event['type'] == 'message' and 'subtype' not in event:
+                            text = event['text']
 
-                        match = re.match(response_regex, text)
-                        if match:
-                            self.send_message(event['channel'], list(match.groups()))
-                        else:
-                            try:
-                                self.append_chain(event['user'], text)
-                            except KeyError:
-                                # quick hack because it breaks when quotes are in the string
-                                print('KeyError caught')
+                            match = re.match(response_regex, text)
+                            if match:
+                                self.send_message(event['channel'], list(match.groups()))
+                            else:
+                                try:
+                                    self.append_chain(event['user'], text)
+                                except KeyError:
+                                    # quick hack because it breaks when quotes are in the string
+                                    print('KeyError caught')
 
-                    new_data = json.dumps(self.export_data())
-                    if old_data != new_data:
-                        with open(self.data_file, 'w') as f:
-                            f.write(new_data)
-                        old_data = new_data
+                        new_data = json.dumps(self.export_data())
+                        if old_data != new_data:
+                            with open(self.data_file, 'w') as f:
+                                f.write(new_data)
+                            old_data = new_data
 
-                time.sleep(1)
+                    time.sleep(1)
+                except:
+                    print(traceback.format_exc())
         else:
             raise Exception('Unable to start!')
 
