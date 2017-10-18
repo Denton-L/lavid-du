@@ -18,6 +18,7 @@ class LavidDu:
         self.data_file = data_file
 
         self.user_models = {}
+
         try:
             with open(self.data_file, 'r') as f:
                 user_models = json.loads(f.read())
@@ -26,7 +27,8 @@ class LavidDu:
         except OSError:
             print('No data found. Starting from scratch.')
 
-        self.user_id = self.get_user_id()
+        self.name_ids = self.get_user_ids()
+        self.user_id = self.get_own_id()
         self.running = False
 
         signal.signal(signal.SIGINT, self.handle_signal)
@@ -54,7 +56,11 @@ class LavidDu:
         for user in user_models:
             self.combine_models(user, markovify.NewlineText('\n'.join(user_models[user])))
 
-    def get_user_id(self):
+    def get_user_ids(self):
+        return {member['name']: member['id']
+                for member in self.slack_client.api_call('users.list')['members']}
+
+    def get_own_id(self):
         return self.bot_slack_client.api_call('auth.test')['user_id']
 
     def send_message(self, channel, user_ids):
@@ -92,7 +98,9 @@ class LavidDu:
             self.combine_models(user, markovify.NewlineText.from_dict(model))
 
     def start(self):
-        response_regex = regex.compile('<@%s> *imitate(?: *<@([A-Z0-9]+)>)+' % self.user_id)
+        response_regex = regex.compile(
+                '<@%s> *imitate(?: *(?:(?P<name>[0-9a-z][0-9a-z._-]*)|(?:<@(?P<id>[0-9A-Z]+)>)))+' %
+                self.user_id)
 
         started = self.bot_slack_client.rtm_connect()
         if started:
@@ -108,9 +116,12 @@ class LavidDu:
                         if event['type'] == 'message' and 'subtype' not in event:
                             text = event['text']
 
-                            match = regex.match(response_regex, text)
+                            match = regex.fullmatch(response_regex, text)
                             if match:
-                                self.send_message(event['channel'], match.captures(1))
+                                ids = match.captures('id') + [self.name_ids[name]
+                                        for name in match.captures('name') if name in self.name_ids]
+                                if ids:
+                                    self.send_message(event['channel'], ids)
                             else:
                                 try:
                                     self.append_chain(event['user'], text)

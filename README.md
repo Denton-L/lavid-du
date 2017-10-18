@@ -11,6 +11,8 @@ If you would like to imitate multiple people, use `@Lavid Du imitate @<user1> @<
 
 Finally, to create a sentence based on all past data, use `@Lavid Du imitate @Lavid Du`.
 
+Alternately, instead of tagging, you can just use username like this: `@Lavid Du imitate lavid_du`.
+
 ## Dependencies
 
 * Python 3 (tested on 3.6.2)
