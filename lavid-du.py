@@ -3,7 +3,7 @@
 import argparse
 import json
 import markovify
-import re
+import regex
 import signal
 import slackclient
 import time
@@ -58,11 +58,11 @@ class LavidDu:
         return self.bot_slack_client.api_call('auth.test')['user_id']
 
     def send_message(self, channel, user_ids):
-        if self.user_id in user_ids:
-            collected_models = [self.user_models[user_id] for user_id in self.user_models]
-        else:
-            collected_models = [self.user_models[user_id]
-                    for user_id in user_ids if user_id in self.user_models]
+        collected_models = (
+                list(self.user_models.values())
+                if self.user_id in user_ids
+                else [self.user_models[user_id]
+                    for user_id in user_ids if user_id in self.user_models])
 
         if collected_models:
             final_model = (markovify.combine(collected_models)
@@ -92,7 +92,7 @@ class LavidDu:
             self.combine_models(user, markovify.NewlineText.from_dict(model))
 
     def start(self):
-        response_regex = re.compile('<@%s> *imitate(?: *<@([A-Z0-9]+)>)+' % self.user_id)
+        response_regex = regex.compile('<@%s> *imitate(?: *<@([A-Z0-9]+)>)+' % self.user_id)
 
         started = self.bot_slack_client.rtm_connect()
         if started:
@@ -108,9 +108,9 @@ class LavidDu:
                         if event['type'] == 'message' and 'subtype' not in event:
                             text = event['text']
 
-                            match = re.match(response_regex, text)
+                            match = regex.match(response_regex, text)
                             if match:
-                                self.send_message(event['channel'], list(match.groups()))
+                                self.send_message(event['channel'], match.captures(1))
                             else:
                                 try:
                                     self.append_chain(event['user'], text)
