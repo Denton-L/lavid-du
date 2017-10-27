@@ -8,6 +8,7 @@ import signal
 import slackclient
 import time
 import traceback
+import websocket._exceptions
 
 class LavidDu:
     SENTENCE_ATTEMPTS=1000
@@ -102,13 +103,13 @@ class LavidDu:
                 '<@%s> *imitate(?: *(?:(?P<name>[0-9a-z][0-9a-z._-]*)|(?:<@(?P<id>[0-9A-Z]+)>)))+' %
                 self.user_id)
 
-        started = self.bot_slack_client.rtm_connect()
-        if started:
-            self.running = True
-            old_data = None
+        try:
+            started = self.bot_slack_client.rtm_connect()
+            if started:
+                self.running = True
+                old_data = None
 
-            while self.running:
-                try:
+                while self.running:
                     events = self.bot_slack_client.rtm_read()
                     for event in events:
                         print(event)
@@ -134,12 +135,12 @@ class LavidDu:
                             with open(self.data_file, 'w') as f:
                                 f.write(new_data)
                             old_data = new_data
-
                     time.sleep(1)
-                except:
-                    print(traceback.format_exc())
-        else:
-            raise Exception('Unable to start!')
+            else:
+                raise Exception('Unable to start!')
+
+        except websocket._exceptions.WebSocketConnectionClosedException:
+            print(traceback.format_exc())
 
     def stop(self):
         self.running = False
