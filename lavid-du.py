@@ -8,6 +8,8 @@ import signal
 import slackclient
 import time
 import traceback
+import urllib.error
+import urllib.request
 import websocket._exceptions
 
 class LavidDu:
@@ -148,6 +150,17 @@ class LavidDu:
     def handle_signal(self, signal, frame):
         self.stop()
 
+def wait_for_internet():
+    disconnected = True
+    while disconnected:
+        try:
+            urllib.request.urlopen('https://slack.com/', timeout=1)
+            print('Internet connection established')
+            disconnected = False
+        except urllib.error.URLError:
+            print('Waiting for internet connection...')
+            time.sleep(1)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--settings', default='settings.json',
@@ -162,6 +175,8 @@ if __name__ == '__main__':
 
     with open(args.settings, 'r') as f:
         settings = json.loads(f.read())
+
+    wait_for_internet()
 
     lavid_du = LavidDu(settings['api_key'], settings['bot_api_key'], args.data)
 
