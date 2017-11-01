@@ -1,0 +1,11 @@
+certifi==2017.7.27.1
+chardet==3.0.4
+idna==2.6
+markovify==0.6.4
+regex==2017.9.23
+requests==2.18.4
+six==1.11.0
+slackclient==1.0.9
+Unidecode==0.4.21
+urllib3==1.22
+websocket-client==0.44.0
