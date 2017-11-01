@@ -126,11 +126,7 @@ class LavidDu:
                                 if ids:
                                     self.send_message(event['channel'], ids)
                             else:
-                                try:
-                                    self.append_chain(event['user'], text)
-                                except KeyError:
-                                    # quick hack because it breaks when quotes are in the string
-                                    print('KeyError caught')
+                                self.append_chain(event['user'], text)
 
                         new_data = json.dumps(self.export_data())
                         if old_data != new_data:
