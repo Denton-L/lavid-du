@@ -119,7 +119,7 @@ class LavidDu:
                         if event['type'] == 'message' and 'subtype' not in event:
                             text = event['text']
 
-                            match = regex.fullmatch(response_regex, text)
+                            match = regex.search(response_regex, text)
                             if match:
                                 ids = match.captures('id') + [self.name_ids[name]
                                         for name in match.captures('name') if name in self.name_ids]
