@@ -137,7 +137,7 @@ class LavidDu:
                             with open(self.data_file, 'w') as f:
                                 f.write(new_data)
                             old_data = new_data
-                    time.sleep(1)
+                    time.sleep(0.1)
             else:
                 raise Exception('Unable to start!')
 
