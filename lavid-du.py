@@ -5,6 +5,8 @@ import json
 import markovify
 import regex
 import signal
+import os
+import os.path
 import slackclient
 import time
 import traceback
@@ -13,22 +15,25 @@ import urllib.request
 import websocket._exceptions
 
 class LavidDu:
-    SENTENCE_ATTEMPTS=1000
+    SENTENCE_ATTEMPTS = 1000
 
-    def __init__(self, api_token, bot_api_token, data_file):
+    def __init__(self, api_token, bot_api_token, data_dir):
         self.slack_client = slackclient.SlackClient(api_token)
         self.bot_slack_client = slackclient.SlackClient(bot_api_token)
-        self.data_file = data_file
+        self.data_dir = data_dir
 
         self.user_models = {}
 
-        try:
-            with open(self.data_file, 'r') as f:
-                user_models = json.loads(f.read())
-                for user in user_models:
-                    self.user_models[user] = markovify.NewlineText.from_dict(user_models[user])
-        except OSError:
-            print('No data found. Starting from scratch.')
+        json_regex = regex.compile('(?P<id>[0-9A-Z]+)\.json')
+
+        for json_filename in os.listdir(self.data_dir):
+            full_path = os.path.join(self.data_dir, json_filename)
+            match = json_regex.fullmatch(json_filename)
+
+            if match and os.path.isfile(full_path):
+                with open(full_path, 'r') as f:
+                    text = f.read()
+                self.user_models[match.group('id')] = markovify.NewlineText.from_json(text)
 
         self.name_ids = self.get_user_ids()
         self.user_id = self.get_own_id()
@@ -36,6 +41,12 @@ class LavidDu:
 
         signal.signal(signal.SIGINT, self.handle_signal)
         signal.signal(signal.SIGTERM, self.handle_signal)
+
+    def export_data(self, user):
+        full_path = os.path.join(self.data_dir, '%s.json' % user)
+        text = self.user_models[user].to_json()
+        with open(full_path, 'w') as f:
+            f.write(text)
 
     def combine_models(self, user_id, user_model):
         self.user_models[user_id] = (
@@ -93,9 +104,6 @@ class LavidDu:
         user_model = markovify.NewlineText(text)
         self.combine_models(user_id, user_model)
 
-    def export_data(self):
-        return {user: model.to_dict() for user, model in self.user_models.items()}
-
     def import_data(self, data):
         for user, model in data.items():
             self.combine_models(user, markovify.NewlineText.from_dict(model))
@@ -109,7 +117,6 @@ class LavidDu:
             started = self.bot_slack_client.rtm_connect()
             if started:
                 self.running = True
-                old_data = None
 
                 while self.running:
                     events = self.bot_slack_client.rtm_read()
@@ -127,16 +134,13 @@ class LavidDu:
                                     self.send_message(event['channel'], ids)
                             else:
                                 try:
-                                    self.append_chain(event['user'], text)
+                                    user = event['user']
+                                    self.append_chain(user, text)
+                                    self.export_data(user)
                                 except KeyError:
                                     # quick hack because this is thrown occasionally
                                     print('KeyError caught:', text)
 
-                        new_data = json.dumps(self.export_data())
-                        if old_data != new_data:
-                            with open(self.data_file, 'w') as f:
-                                f.write(new_data)
-                            old_data = new_data
                     time.sleep(0.1)
             else:
                 raise Exception('Unable to start!')
@@ -165,8 +169,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--settings', default='settings.json',
             help='The settings JSON to load from.')
-    parser.add_argument('-d', '--data', default='data.json',
-            help='The data JSON to load from.')
+    parser.add_argument('-d', '--data', default='data/',
+            help='The data directory to load from.')
     parser.add_argument('--train-public', action='append',
             help='Get training data from a public channel.')
     parser.add_argument('--train-private', action='append',
