@@ -71,8 +71,11 @@ class LavidDu:
             self.combine_models(user, markovify.NewlineText('\n'.join(user_models[user])))
 
     def get_user_ids(self):
-        return {member['name']: member['id']
-                for member in self.slack_client.api_call('users.list')['members']}
+        members = self.slack_client.api_call('users.list')['members']
+        return {
+                **{member['name']: member['id'] for member in members},
+                **{member['profile']['display_name']: member['id'] for member in members}
+                }
 
     def get_own_id(self):
         return self.bot_slack_client.api_call('auth.test')['user_id']
