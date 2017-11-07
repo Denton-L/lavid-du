@@ -72,8 +72,8 @@ class LavidDu:
     def get_user_ids(self):
         members = self.slack_client.api_call('users.list')['members']
         return {
-                **{member['name']: member['id'] for member in members},
-                **{member['profile']['display_name']: member['id'] for member in members}
+                **{member['profile']['display_name']: member['id'] for member in members},
+                **{member['name']: member['id'] for member in members}
                 }
 
     def get_own_id(self):
