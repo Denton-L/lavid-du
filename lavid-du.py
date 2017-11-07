@@ -12,7 +12,6 @@ import time
 import traceback
 import urllib.error
 import urllib.request
-import websocket._exceptions
 
 class LavidDu:
     SENTENCE_ATTEMPTS = 1000
@@ -148,7 +147,7 @@ class LavidDu:
             else:
                 raise Exception('Unable to start!')
 
-        except websocket._exceptions.WebSocketConnectionClosedException:
+        except Exception:
             print(traceback.format_exc())
 
     def stop(self):
