@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 import argparse
+import collections
 import json
 import markovify
-import regex
-import signal
 import os
 import os.path
+import regex
+import signal
 import slackclient
 import time
 import traceback
@@ -80,16 +81,16 @@ class LavidDu:
         return self.bot_slack_client.api_call('auth.test')['user_id']
 
     def send_message(self, channel, user_ids):
-        collected_models = (
-                list(self.user_models.values())
+        id_counter = collections.Counter(
+                self.user_models.values()
                 if self.user_id in user_ids
                 else [self.user_models[user_id]
                     for user_id in user_ids if user_id in self.user_models])
 
-        if collected_models:
-            final_model = (markovify.combine(collected_models)
-                    if len(collected_models) > 1
-                    else collected_models[0])
+        if id_counter:
+            final_model = (markovify.combine(list(id_counter.keys()), list(id_counter.values()))
+                    if len(id_counter) > 1
+                    else next(iter(id_counter)))
             text = final_model.make_sentence(tries=LavidDu.SENTENCE_ATTEMPTS)
             if not text:
                 print('Unable to create unique sentence.')
