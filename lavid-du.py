@@ -16,6 +16,9 @@ import urllib.request
 
 class LavidDu:
     SENTENCE_ATTEMPTS = 1000
+    SLEEP_DELAY = 0.1
+    PING_EVERY = 10
+    PING_COUNTER_MAX = int(PING_EVERY / SLEEP_DELAY)
 
     def __init__(self, api_token, bot_api_token, data_dir):
         self.slack_client = slackclient.SlackClient(api_token)
@@ -120,6 +123,7 @@ class LavidDu:
             started = self.bot_slack_client.rtm_connect()
             if started:
                 self.running = True
+                ping_counter = LavidDu.PING_COUNTER_MAX
 
                 while self.running:
                     events = self.bot_slack_client.rtm_read()
@@ -144,7 +148,12 @@ class LavidDu:
                                     # quick hack because this is thrown occasionally
                                     print('KeyError caught:', text)
 
-                    time.sleep(0.1)
+                    if not ping_counter:
+                        self.bot_slack_client.server.ping()
+                        ping_counter = LavidDu.PING_COUNTER_MAX
+                    ping_counter -= 1
+
+                    time.sleep(LavidDu.SLEEP_DELAY)
             else:
                 raise Exception('Unable to start!')
 
