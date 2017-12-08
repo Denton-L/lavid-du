@@ -147,6 +147,8 @@ class LavidDu:
                                 except KeyError:
                                     # quick hack because this is thrown occasionally
                                     print('KeyError caught:', text)
+                        elif event['type'] == 'user_change':
+                            self.name_ids = self.get_user_ids()
 
                     if not ping_counter:
                         self.bot_slack_client.server.ping()
