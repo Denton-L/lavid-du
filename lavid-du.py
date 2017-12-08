@@ -120,7 +120,7 @@ class LavidDu:
                 self.user_id)
 
         try:
-            started = self.bot_slack_client.rtm_connect()
+            started = self.bot_slack_client.rtm_connect(False)
             if started:
                 self.running = True
                 ping_counter = LavidDu.PING_COUNTER_MAX
