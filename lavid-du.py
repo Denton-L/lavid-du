@@ -150,10 +150,10 @@ class LavidDu:
                         elif event['type'] == 'user_change':
                             self.name_ids = self.get_user_ids()
 
-                    if not ping_counter:
+                    ping_counter -= 1
+                    if ping_counter <= 0:
                         self.bot_slack_client.server.ping()
                         ping_counter = LavidDu.PING_COUNTER_MAX
-                    ping_counter -= 1
 
                     time.sleep(LavidDu.SLEEP_DELAY)
             else:
