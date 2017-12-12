@@ -119,10 +119,16 @@ class LavidDu:
                 '<@%s> *imitate(?: *(?:(?P<name>[0-9a-z][0-9a-z._-]*)|(?:<@(?P<id>[0-9A-Z]+)>)))+' %
                 self.user_id)
 
-        try:
+        self.running = True
+
+        while self.running:
             started = self.bot_slack_client.rtm_connect(False)
-            if started:
-                self.running = True
+            if not started:
+                print('Unable to start. Retrying...')
+                time.sleep(LavidDu.SLEEP_DELAY)
+                continue
+
+            try:
                 ping_counter = LavidDu.PING_COUNTER_MAX
 
                 while self.running:
@@ -156,11 +162,9 @@ class LavidDu:
                         ping_counter = LavidDu.PING_COUNTER_MAX
 
                     time.sleep(LavidDu.SLEEP_DELAY)
-            else:
-                raise Exception('Unable to start!')
 
-        except Exception:
-            print(traceback.format_exc())
+            except Exception:
+                print(traceback.format_exc())
 
     def stop(self):
         self.running = False
