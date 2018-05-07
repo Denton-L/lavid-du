@@ -19,6 +19,7 @@ class LavidDu:
     SLEEP_DELAY = 0.1
     PING_EVERY = 10
     PING_COUNTER_MAX = int(PING_EVERY / SLEEP_DELAY)
+    RESPONSE_REGEX_TEMPLATE = '<@%s> *imitate(?: *(?:(?P<name>[0-9a-z][0-9a-z._-]*)|(?:<@(?P<id>[0-9A-Z]+)>)))+'
 
     def __init__(self, api_token, bot_api_token, data_dir):
         self.slack_client = slackclient.SlackClient(api_token)
@@ -41,6 +42,7 @@ class LavidDu:
         self.name_ids = self.get_user_ids()
         self.user_id = self.get_own_id()
         self.running = False
+        self.response_regex = regex.compile(LavidDu.RESPONSE_REGEX_TEMPLATE % self.user_id)
 
         signal.signal(signal.SIGINT, self.handle_signal)
         signal.signal(signal.SIGTERM, self.handle_signal)
@@ -120,11 +122,28 @@ class LavidDu:
         for user, model in data.items():
             self.combine_models(user, markovify.NewlineText.from_dict(model))
 
-    def start(self):
-        response_regex = regex.compile(
-                '<@%s> *imitate(?: *(?:(?P<name>[0-9a-z][0-9a-z._-]*)|(?:<@(?P<id>[0-9A-Z]+)>)))+' %
-                self.user_id)
+    def process_event(self, event):
+        if event['type'] == 'message' and 'subtype' not in event:
+            text = event['text']
 
+            match = self.response_regex.search(text)
+            if match:
+                ids = match.captures('id') + [self.name_ids[name]
+                        for name in match.captures('name') if name in self.name_ids]
+                if ids:
+                    self.send_message(event['channel'], ids)
+            else:
+                try:
+                    user = event['user']
+                    self.append_chain(user, text)
+                    self.export_data(user)
+                except KeyError:
+                    # quick hack because this is thrown occasionally
+                    print('KeyError caught:', text)
+        elif event['type'] == 'user_change':
+            self.name_ids = self.get_user_ids()
+
+    def start(self):
         self.running = True
 
         while self.running:
@@ -141,26 +160,7 @@ class LavidDu:
                     events = self.bot_slack_client.rtm_read()
                     for event in events:
                         print(event)
-
-                        if event['type'] == 'message' and 'subtype' not in event:
-                            text = event['text']
-
-                            match = regex.search(response_regex, text)
-                            if match:
-                                ids = match.captures('id') + [self.name_ids[name]
-                                        for name in match.captures('name') if name in self.name_ids]
-                                if ids:
-                                    self.send_message(event['channel'], ids)
-                            else:
-                                try:
-                                    user = event['user']
-                                    self.append_chain(user, text)
-                                    self.export_data(user)
-                                except KeyError:
-                                    # quick hack because this is thrown occasionally
-                                    print('KeyError caught:', text)
-                        elif event['type'] == 'user_change':
-                            self.name_ids = self.get_user_ids()
+                        self.process_event(event)
 
                     ping_counter -= 1
                     if ping_counter <= 0:
