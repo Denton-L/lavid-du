@@ -51,6 +51,10 @@ class LavidDu:
         with open(full_path, 'w') as f:
             f.write(text)
 
+    def export_all_data(self):
+        for user in self.user_models:
+            self.export_data(user)
+
     def combine_models(self, user_id, user_model):
         self.user_models[user_id] = (
                 markovify.combine([self.user_models[user_id], user_model])
@@ -209,5 +213,8 @@ if __name__ == '__main__':
     if args.train_private:
         for channel in args.train_private:
             lavid_du.train(channel, False)
+
+    if args.train_public or args.train_private:
+        lavid_du.export_all_data()
 
     lavid_du.start()
