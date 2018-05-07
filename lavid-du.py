@@ -61,7 +61,7 @@ class LavidDu:
                 if user_id in self.user_models
                 else user_model)
 
-    def train(self, channel, is_public=True):
+    def train(self, channel, since, is_public=True):
         response = self.slack_client.api_call(
                 '%s.history' % ('channels' if is_public else 'groups'),
                 channel=channel,
@@ -71,7 +71,9 @@ class LavidDu:
         user_models = {}
 
         for message in response['messages']:
-            if message['type'] == 'message' and 'subtype' not in message:
+            if (message['type'] == 'message'
+                    and 'subtype' not in message
+                    and (float(message['ts']) >= since if since else True)):
                 user_models.setdefault(message['user'], []).append(message['text'])
 
         for user in user_models:
@@ -197,6 +199,8 @@ if __name__ == '__main__':
             help='Get training data from a public channel.')
     parser.add_argument('--train-private', action='append',
             help='Get training data from a private channel.')
+    parser.add_argument('--since', type=float,
+            help='Get training data since a certain timestamp')
     args = parser.parse_args()
 
     with open(args.settings, 'r') as f:
@@ -208,11 +212,11 @@ if __name__ == '__main__':
 
     if args.train_public:
         for channel in args.train_public:
-            lavid_du.train(channel, True)
+            lavid_du.train(channel, args.since, True)
 
     if args.train_private:
         for channel in args.train_private:
-            lavid_du.train(channel, False)
+            lavid_du.train(channel, args.since, False)
 
     if args.train_public or args.train_private:
         lavid_du.export_all_data()
