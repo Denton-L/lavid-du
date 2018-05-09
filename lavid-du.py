@@ -62,19 +62,27 @@ class LavidDu:
                 else user_model)
 
     def train(self, channel, since, is_public=True):
-        response = self.slack_client.api_call(
-                '%s.history' % ('channels' if is_public else 'groups'),
-                channel=channel,
-                count=1000)
-
-        print(response)
         user_models = {}
+        has_more = True
+        last_timestamp = since or 0
 
-        for message in response['messages']:
-            if (message['type'] == 'message'
-                    and 'subtype' not in message
-                    and (float(message['ts']) >= since if since else True)):
-                user_models.setdefault(message['user'], []).append(message['text'])
+        while has_more:
+            response = self.slack_client.api_call(
+                    '%s.history' % ('channels' if is_public else 'groups'),
+                    channel=channel,
+                    oldest=last_timestamp,
+                    count=1000)
+            print(response)
+
+            for message in response['messages']:
+                if (message['type'] == 'message'
+                        and 'subtype' not in message):
+                    user_models.setdefault(message['user'], []).append(message['text'])
+            last_timestamp = response['messages'][0]['ts']
+            has_more = response['has_more']
+
+            if has_more:
+                time.sleep(LavidDu.SLEEP_DELAY)
 
         for user in user_models:
             self.combine_models(user, markovify.NewlineText('\n'.join(user_models[user])))
