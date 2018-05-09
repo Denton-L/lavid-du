@@ -228,5 +228,5 @@ if __name__ == '__main__':
 
     if args.train_public or args.train_private:
         lavid_du.export_all_data()
-
-    lavid_du.start()
+    else:
+        lavid_du.start()
