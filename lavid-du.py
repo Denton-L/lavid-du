@@ -17,8 +17,7 @@ import urllib.request
 class LavidDu:
     SENTENCE_ATTEMPTS = 1000
     SLEEP_DELAY = 0.1
-    PING_EVERY = 10
-    PING_COUNTER_MAX = int(PING_EVERY / SLEEP_DELAY)
+    PING_EVERY = 10.0
     RESPONSE_REGEX_TEMPLATE = '<@%s> *imitate(?: *(?:(?P<name>[0-9a-z][0-9a-z._-]*)|(?:<@(?P<id>[0-9A-Z]+)>)))+'
 
     def __init__(self, api_token, bot_api_token, data_dir):
@@ -145,6 +144,7 @@ class LavidDu:
 
     def start(self):
         self.running = True
+        last_ping = 0.0
 
         while self.running:
             started = self.bot_slack_client.rtm_connect(False)
@@ -154,18 +154,16 @@ class LavidDu:
                 continue
 
             try:
-                ping_counter = LavidDu.PING_COUNTER_MAX
-
                 while self.running:
                     events = self.bot_slack_client.rtm_read()
                     for event in events:
                         print(event)
                         self.process_event(event)
 
-                    ping_counter -= 1
-                    if ping_counter <= 0:
+                    now = time.time()
+                    if now - last_ping >= LavidDu.PING_EVERY:
                         self.bot_slack_client.server.ping()
-                        ping_counter = LavidDu.PING_COUNTER_MAX
+                        last_ping = now
 
                     time.sleep(LavidDu.SLEEP_DELAY)
 
