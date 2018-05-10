@@ -74,7 +74,7 @@ class LavidDu:
                         and 'subtype' not in message):
                     user_models.setdefault(message['user'], []).append(message['text'])
             last_timestamp = response['messages'][0]['ts']
-            has_more = response['has_more']
+            has_more = since and response['has_more']
 
             if has_more:
                 time.sleep(LavidDu.SLEEP_DELAY)
