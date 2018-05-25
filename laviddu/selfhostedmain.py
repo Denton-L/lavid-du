@@ -7,7 +7,8 @@ import traceback
 import urllib.error
 import urllib.request
 
-import laviddu
+from laviddu import LavidDu
+from datahandler.filedatahandler import FileDataHandler
 
 def wait_for_internet():
     disconnected = True
@@ -39,7 +40,9 @@ if __name__ == '__main__':
 
     wait_for_internet()
 
-    lavid_du = laviddu.LavidDu(settings['api_key'], settings['bot_api_key'], args.data)
+    data_handler = FileDataHandler(args.data)
+
+    lavid_du = LavidDu(settings['api_key'], settings['bot_api_key'], data_handler)
 
     if args.train_public:
         for channel in args.train_public:
