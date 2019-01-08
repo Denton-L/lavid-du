@@ -20,9 +20,8 @@ class LavidDu:
     PING_EVERY = 10
     PING_COUNTER_MAX = int(PING_EVERY / SLEEP_DELAY)
 
-    def __init__(self, api_token, bot_api_token, data_dir):
-        self.slack_client = slackclient.SlackClient(api_token)
-        self.bot_slack_client = slackclient.SlackClient(bot_api_token)
+    def __init__(self, bot_api_token, data_dir):
+        self.slack_client = slackclient.SlackClient(bot_api_token)
         self.data_dir = data_dir
 
         self.user_models = {}
@@ -95,7 +94,7 @@ class LavidDu:
                 }
 
     def get_own_id(self):
-        return self.bot_slack_client.api_call('auth.test')['user_id']
+        return self.slack_client.api_call('auth.test')['user_id']
 
     def send_message(self, channel, user_ids):
         id_counter = collections.Counter(
@@ -136,7 +135,7 @@ class LavidDu:
         self.running = True
 
         while self.running:
-            started = self.bot_slack_client.rtm_connect(False)
+            started = self.slack_client.rtm_connect(False)
             if not started:
                 print('Unable to start. Retrying...')
                 time.sleep(LavidDu.SLEEP_DELAY)
@@ -146,7 +145,7 @@ class LavidDu:
                 ping_counter = LavidDu.PING_COUNTER_MAX
 
                 while self.running:
-                    events = self.bot_slack_client.rtm_read()
+                    events = self.slack_client.rtm_read()
                     for event in events:
                         print(event)
 
@@ -172,7 +171,7 @@ class LavidDu:
 
                     ping_counter -= 1
                     if ping_counter <= 0:
-                        self.bot_slack_client.server.ping()
+                        self.slack_client.server.ping()
                         ping_counter = LavidDu.PING_COUNTER_MAX
 
                     time.sleep(LavidDu.SLEEP_DELAY)
@@ -216,7 +215,7 @@ if __name__ == '__main__':
 
     wait_for_internet()
 
-    lavid_du = LavidDu(settings['api_key'], settings['bot_api_key'], args.data)
+    lavid_du = LavidDu(settings['bot_api_key'], args.data)
 
     if args.train_public:
         for channel in args.train_public:
