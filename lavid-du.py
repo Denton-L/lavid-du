@@ -130,7 +130,7 @@ class LavidDu:
 
     def start(self):
         response_regex = regex.compile(
-                '<@%s> *imitate(?: *(?:(?P<name>[0-9a-z][0-9a-z._-]*)|(?:<@(?P<id>[0-9A-Z]+)>)))+' %
+                '<@%s>(?: *(?:(?P<name>[0-9a-z][0-9a-z._-]*)|(?:<@(?P<id>[0-9A-Z]+)>)))+' %
                 self.user_id)
 
         self.running = True

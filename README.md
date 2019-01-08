@@ -5,13 +5,13 @@ A Slackbot that imitates your friends. Inspired by the dumb things said by
 
 ## Usage
 
-After the bot is added to your Slack channel, simply call it using `@Lavid Du imitate @<user>`.
+After the bot is added to your Slack channel, simply call it using `@Lavid Du @<user>`.
 
-If you would like to imitate multiple people, use `@Lavid Du imitate @<user1> @<user2> ...`.
+If you would like to imitate multiple people, use `@Lavid Du @<user1> @<user2> ...`.
 
-Finally, to create a sentence based on all past data, use `@Lavid Du imitate @Lavid Du`.
+Finally, to create a sentence based on all past data, use `@Lavid Du @Lavid Du`.
 
-Alternately, instead of tagging, you can just use username like this: `@Lavid Du imitate lavid_du`.
+Alternately, instead of tagging, you can just use username like this: `@Lavid Du lavid_du`.
 
 ## Dependencies
 
